@@ -6,7 +6,7 @@ export type LoginResponse = {
   phone: string;
 };
 
-const apiBase = import.meta.env.VITE_API_BASE_URL ?? '';
+const apiBase = (import.meta.env.VITE_API_BASE_URL ?? 'https://be-tram-phim.onrender.com').replace(/\/+$/, '');
 
 export async function loginApi(username: string, password: string): Promise<LoginResponse> {
   const res = await fetch(`${apiBase}/api/auth/login`, {
