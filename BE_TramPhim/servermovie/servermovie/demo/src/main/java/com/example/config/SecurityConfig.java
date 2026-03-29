@@ -23,7 +23,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
+        // THÊM: Cho phép tên miền thật của bạn và localhost
+        config.setAllowedOrigins(List.of(
+                "https://vanthang13.id.vn",
+                "https://www.vanthang13.id.vn",
+                "http://localhost:5173" // Port mặc định của Vite
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -36,13 +41,16 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable());
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
-        http.httpBasic(httpBasic -> httpBasic.disable()); 
+        http.httpBasic(httpBasic -> httpBasic.disable());
         http.formLogin(form -> form.disable());
+
+        // Lưu ý: Nếu JwtFilter của bạn chưa check null token, nó có thể gây lỗi ở đây.
         http.addFilterBefore(new JwtFilter(), UsernamePasswordAuthenticationFilter.class);
 
         http.authorizeHttpRequests(auth -> auth
-                // .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
+                // THÊM: Cho phép xem phim công khai (không cần đăng nhập)
+                .requestMatchers("/api/movies/**").permitAll()
                 .requestMatchers("/admin/**").hasAuthority("ADMIN")
                 .anyRequest().authenticated());
 
