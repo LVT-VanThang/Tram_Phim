@@ -25,11 +25,12 @@ public class JwtFilter extends OncePerRequestFilter {
             String token = header.substring(7);
 
             if (JwtUtil.validate(token)) {
-
                 String username = JwtUtil.getUsername(token);
                 List<String> roles = JwtUtil.getRoles(token);
 
-                // convert role → GrantedAuthority
+                // THÊM: Kiểm tra nếu roles null thì gán danh sách rỗng để không bị lỗi stream
+                if (roles == null) roles = new ArrayList<>();
+
                 List<SimpleGrantedAuthority> authorities = roles.stream()
                         .map(SimpleGrantedAuthority::new)
                         .toList();
