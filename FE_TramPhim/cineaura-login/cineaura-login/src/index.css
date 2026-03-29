@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+@theme {
+  --color-secondary: #255ba3;
+  --color-surface-container-high: #dfe3e7;
+  --color-on-tertiary-container: #610e63;
+  --color-primary-fixed: #799dff;
+  --color-primary-dim: #0047b7;
+  --color-on-secondary-fixed-variant: #135097;
+  --color-outline: #74777a;
+  --color-error-dim: #9f0519;
+  --color-error: #b31b25;
+  --color-surface-variant: #d9dde1;
+  --color-error-container: #fb5151;
+  --color-on-secondary-container: #00468d;
+  --color-inverse-surface: #0b0f11;
+  --color-on-primary-container: #001e58;
+  --color-surface-tint: #0052d0;
+  --color-primary-container: #799dff;
+  --color-on-primary-fixed-variant: #00276c;
+  --color-on-surface-variant: #595c5e;
+  --color-secondary-fixed-dim: #a4c5ff;
+  --color-on-error: #ffefee;
+  --color-secondary-fixed: #bbd2ff;
+  --color-inverse-on-surface: #9a9da0;
+  --color-on-secondary: #eff2ff;
+  --color-on-error-container: #570008;
+  --color-on-primary-fixed: #000000;
+  --color-surface-container-low: #eef1f4;
+  --color-surface-container: #e5e8ec;
+  --color-inverse-primary: #5e8bff;
+  --color-surface: #f5f7fa;
+  --color-tertiary-fixed: #f797f0;
+  --color-secondary-container: #bbd2ff;
+  --color-on-tertiary: #ffeef8;
+  --color-primary: #0052d0;
+  --color-on-tertiary-fixed: #400042;
+  --color-tertiary-fixed-dim: #e88ae1;
+  --color-on-secondary-fixed: #00346a;
+  --color-surface-dim: #d0d5d9;
+  --color-surface-bright: #f5f7fa;
+  --color-on-background: #2c2f32;
+  --color-tertiary-dim: #7f2d7e;
+  --color-on-primary: #f1f2ff;
+  --color-outline-variant: #abadb0;
+  --color-primary-fixed-dim: #638eff;
+  --color-surface-container-highest: #d9dde1;
+  --color-on-surface: #2c2f32;
+  --color-secondary-dim: #114f96;
+  --color-background: #f5f7fa;
+  --color-on-tertiary-fixed-variant: #6c1a6c;
+  --color-tertiary-container: #f797f0;
+  --color-tertiary: #8d3a8b;
+  --color-surface-container-lowest: #ffffff;
+
+  --font-headline: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-label: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-DEFAULT: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-body);
+  }
+  h1,
+  h2,
+  h3,
+  .brand {
+    font-family: var(--font-headline);
+  }
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.signature-gradient {
+  background: linear-gradient(135deg, #0052d0 0%, #799dff 100%);
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+  display: inline-block;
+  line-height: 1;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

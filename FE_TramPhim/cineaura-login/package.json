@@ -1,0 +1,10 @@
+{
+  "name": "cineaura-workspace",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix ./cineaura-login",
+    "build": "npm run build --prefix ./cineaura-login",
+    "preview": "npm run preview --prefix ./cineaura-login",
+    "install:app": "npm install --prefix ./cineaura-login"
+  }
+}
