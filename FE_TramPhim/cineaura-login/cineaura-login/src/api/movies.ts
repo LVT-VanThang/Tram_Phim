@@ -1,6 +1,6 @@
 import { getStoredToken } from '../auth/session';
 
-const API_BASE = '/api';
+const apiBase = (import.meta.env.VITE_API_BASE_URL ?? 'https://be-tram-phim.onrender.com').replace(/\/+$/, '');
 
 function authHeaders(): HeadersInit {
   const token = getStoredToken();
@@ -77,7 +77,7 @@ function normalizeMovie(raw: Record<string, unknown>): Movie {
 }
 
 export async function fetchMovies(): Promise<Movie[]> {
-  const res = await fetch(`${API_BASE}/movies`, { headers: authHeaders() });
+  const res = await fetch(`${apiBase}/api/movies`, { headers: authHeaders() });
   if (res.status === 401 || res.status === 403) {
     throw new Error('UNAUTHORIZED');
   }
@@ -91,7 +91,7 @@ export async function fetchMovies(): Promise<Movie[]> {
 }
 
 export async function fetchGenres(): Promise<Genre[]> {
-  const res = await fetch(`${API_BASE}/genres`, { headers: authHeaders() });
+  const res = await fetch(`${apiBase}/api/genres`, { headers: authHeaders() });
   if (res.status === 401 || res.status === 403) {
     throw new Error('UNAUTHORIZED');
   }

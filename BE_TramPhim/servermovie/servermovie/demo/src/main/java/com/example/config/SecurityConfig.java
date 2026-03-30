@@ -12,9 +12,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.example.util.JwtFilter;
 
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -37,14 +39,28 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(h -> h.disable())
                 .formLogin(f -> f.disable()) // Tắt trang login mặc định
                 .addFilterBefore(new JwtFilter(), UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/movies/**").permitAll() // <-- BẮT BUỘC PHẢI CÓ DÒNG NÀY
+                        // Tránh lỗi match pattern khi deploy (render/proxy có thể thay đổi path).
+                        // Trong app này, FE đang gọi toàn bộ endpoint /api/** nên cho phép truy cập công khai
+                        // (admin vẫn bảo vệ riêng).
+                        .requestMatchers("/api/**").permitAll()
                         .requestMatchers("/admin/**").hasAuthority("ADMIN")
                         .anyRequest().authenticated());
+
+        // Với API (/api/**) thì không redirect về trang /login (SPA/API debugging sẽ rất khó),
+        // mà trả 401 để frontend/Postman hiểu đúng lỗi.
+        http.exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+            if (request.getRequestURI() != null && request.getRequestURI().startsWith("/api/")) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+            response.sendRedirect("/login");
+        }));
         return http.build();
     }
 }
