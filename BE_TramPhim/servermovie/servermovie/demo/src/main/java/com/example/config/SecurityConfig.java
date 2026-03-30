@@ -12,11 +12,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.example.util.JwtFilter;
 
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -25,8 +23,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // THÊM: Cho phép domain thật của Thắng
-        config.setAllowedOrigins(List.of("https://vanthang13.id.vn", "https://www.vanthang13.id.vn", "http://localhost:5173"));
+        config.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -37,30 +34,19 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(h -> h.disable())
-                .formLogin(f -> f.disable()) // Tắt trang login mặc định
-                .addFilterBefore(new JwtFilter(), UsernamePasswordAuthenticationFilter.class)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        // Tránh lỗi match pattern khi deploy (render/proxy có thể thay đổi path).
-                        // Trong app này, FE đang gọi toàn bộ endpoint /api/** nên cho phép truy cập công khai
-                        // (admin vẫn bảo vệ riêng).
-                        .requestMatchers("/api/**").permitAll()
-                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
-                        .anyRequest().authenticated());
+        http.csrf(csrf -> csrf.disable());
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
+        http.httpBasic(httpBasic -> httpBasic.disable()); 
+        http.formLogin(form -> form.disable());
+        http.addFilterBefore(new JwtFilter(), UsernamePasswordAuthenticationFilter.class);
 
-        // Với API (/api/**) thì không redirect về trang /login (SPA/API debugging sẽ rất khó),
-        // mà trả 401 để frontend/Postman hiểu đúng lỗi.
-        http.exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
-            if (request.getRequestURI() != null && request.getRequestURI().startsWith("/api/")) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
-            }
-            response.sendRedirect("/login");
-        }));
+        http.authorizeHttpRequests(auth -> auth
+                // .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/showtimes/**").permitAll()
+                .requestMatchers("/admin/**").hasAuthority("ADMIN")
+                .anyRequest().authenticated());
+
         return http.build();
     }
 }
