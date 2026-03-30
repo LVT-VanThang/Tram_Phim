@@ -26,7 +26,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         // THÊM: Cho phép domain thật của Thắng
-        config.setAllowedOrigins(List.of("https://vanthang13.id.vn", "https://www.vanthang13.id.vn", "http://localhost:5173"));
+       // config.setAllowedOrigins(List.of("https://vanthang13.id.vn", "https://www.vanthang13.id.vn", "http://localhost:5173"));
+        config.setAllowedOrigins(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -44,7 +45,8 @@ public class SecurityConfig {
                 .formLogin(f -> f.disable()) // Tắt trang login mặc định
                 .addFilterBefore(new JwtFilter(), UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS,"/**").permitAll()
+                        .requestMatchers("/api/auth/**","/auth/**").permitAll()
                         // Tránh lỗi match pattern khi deploy (render/proxy có thể thay đổi path).
                         // Trong app này, FE đang gọi toàn bộ endpoint /api/** nên cho phép truy cập công khai
                         // (admin vẫn bảo vệ riêng).
