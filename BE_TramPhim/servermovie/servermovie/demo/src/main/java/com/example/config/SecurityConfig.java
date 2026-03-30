@@ -48,6 +48,7 @@ public class SecurityConfig {
                 .addFilterBefore(new JwtFilter(), UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS,"/**").permitAll()
+                        .requestMatchers("/", "/error", "/login").permitAll()
                         .requestMatchers("/api/auth/**","/auth/**").permitAll()
                         // Tránh lỗi match pattern khi deploy (render/proxy có thể thay đổi path).
                         // Trong app này, FE đang gọi toàn bộ endpoint /api/** nên cho phép truy cập công khai
@@ -61,11 +62,7 @@ public class SecurityConfig {
         http.exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
             System.out.println("URI: " + request.getRequestURL());
             System.out.println("AUTH HEADER: " + request.getHeader("Authorization"));
-            if (request.getRequestURI() != null && request.getRequestURI().startsWith("/api/")) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
-            }
-            response.sendRedirect("/login");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         }));
         return http.build();
     }
