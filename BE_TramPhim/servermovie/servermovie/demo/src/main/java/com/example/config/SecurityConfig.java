@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -26,8 +27,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         // THÊM: Cho phép domain thật của Thắng
-       // config.setAllowedOrigins(List.of("https://vanthang13.id.vn", "https://www.vanthang13.id.vn", "http://localhost:5173"));
-        config.setAllowedOrigins(List.of("*"));
+        config.setAllowedOrigins(List.of("https://vanthang13.id.vn", "https://www.vanthang13.id.vn", "http://localhost:5173"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
