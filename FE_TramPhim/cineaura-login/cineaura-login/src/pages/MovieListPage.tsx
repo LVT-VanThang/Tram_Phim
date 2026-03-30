@@ -336,7 +336,9 @@ export function MovieListPage() {
 }
 
 function MovieCard({ movie }: { movie: Movie }) {
-  const poster = movie.posterUrl?.trim() || POSTER_FALLBACK;
+  const posterUrl = movie.posterUrl?.trim() || '';
+  // Chỉ nhận URL http/https; nếu backend trả rỗng/invalid thì dùng fallback.
+  const poster = posterUrl && /^https?:\/\//i.test(posterUrl) ? posterUrl : POSTER_FALLBACK;
   const durationLabel = movie.duration != null ? `${movie.duration} phút` : '—';
   const genreLabel =
     movie.genres?.length ? movie.genres.map((g) => g.name).join(', ') : 'Đang cập nhật';
@@ -350,6 +352,12 @@ function MovieCard({ movie }: { movie: Movie }) {
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           src={poster}
           loading="lazy"
+          onError={(e) => {
+            const img = e.currentTarget;
+            if (img.dataset.posterFallbackApplied === '1') return;
+            img.dataset.posterFallbackApplied = '1';
+            img.src = POSTER_FALLBACK;
+          }}
         />
         <div className="absolute top-4 left-4 flex gap-2">
           <span className="bg-white/90 backdrop-blur-md text-primary font-bold text-xs px-3 py-1.5 rounded-full flex items-center gap-1">
