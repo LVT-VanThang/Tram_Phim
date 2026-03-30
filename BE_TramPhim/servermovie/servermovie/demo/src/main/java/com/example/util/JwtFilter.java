@@ -19,6 +19,8 @@ public class JwtFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String header = request.getHeader("Authorization");
+                 System.out.println("URI: " + request.getRequestURL());
+        System.out.println("AUTH HEADER: " + request.getHeader("Authorization"));
 
         if (header != null && header.startsWith("Bearer ")) {
 
