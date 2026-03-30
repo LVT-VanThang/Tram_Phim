@@ -55,6 +55,8 @@ public class SecurityConfig {
         // Với API (/api/**) thì không redirect về trang /login (SPA/API debugging sẽ rất khó),
         // mà trả 401 để frontend/Postman hiểu đúng lỗi.
         http.exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+            System.out.println("URI: " + request.getRequestURL());
+            System.out.println("AUTH HEADER: " + request.getHeader("Authorization"));
             if (request.getRequestURI() != null && request.getRequestURI().startsWith("/api/")) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
