@@ -1,7 +1,9 @@
 package com.example.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -44,6 +46,7 @@ public class BookingServiceImpl implements BookingService {
     private static final String SEAT_ALREADY_BOOKED_PREFIX = "Ghế ";
     private static final String SEAT_ALREADY_BOOKED_SUFFIX = " đã được đặt";
     private static final String BOOKING_SUCCESS_MESSAGE = "Tạo đơn đặt vé thành công, vui lòng thanh toán để hoàn tất ";
+    private static final String SHOWTIME_BOOKING_EXPIRED_MESSAGE = "Suất chiếu này đã hết thời gian đặt vé";
 
     @Autowired
     private BookingRepository bookingRepository;
@@ -74,6 +77,8 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         SHOWTIME_NOT_FOUND_MESSAGE));
+
+        validateShowtimeBookingTime(showtime, now);
 
         Integer roomId = showtime.getRoom().getRoom_id();
         List<Seat> seats = seatRepository.findAllById(normalizedSeatIds);
@@ -166,6 +171,20 @@ public class BookingServiceImpl implements BookingService {
         }
 
         return new ArrayList<>(uniqueSeatIds);
+    }
+
+    private void validateShowtimeBookingTime(Showtime showtime, LocalDateTime now) {
+        LocalDate currentDate = now.toLocalDate();
+        LocalTime currentTime = now.toLocalTime();
+        LocalDate showDate = showtime.getShow_date();
+        LocalTime startTime = showtime.getStart_time();
+
+        boolean isBookingExpired = currentDate.isAfter(showDate)
+                || (currentDate.isEqual(showDate) && !currentTime.isBefore(startTime));
+
+        if (isBookingExpired) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, SHOWTIME_BOOKING_EXPIRED_MESSAGE);
+        }
     }
 
     private void cancelExpiredPendingBookings(LocalDateTime expiredBefore) {

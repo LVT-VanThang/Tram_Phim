@@ -69,6 +69,7 @@ public class SecurityConfig {
                 .dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD).permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/genres/**").permitAll()
                 .requestMatchers("/api/movies/**").permitAll()
                 .requestMatchers("/api/showtimes/**").permitAll()
                 .requestMatchers("/api/bookings/**").authenticated()

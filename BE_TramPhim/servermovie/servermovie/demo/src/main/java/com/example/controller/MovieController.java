@@ -1,11 +1,9 @@
 package com.example.controller;
 
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,17 +36,11 @@ public class MovieController {
                         "Không tìm thấy phim với ID: " + id));
     }
 
-    // API tim phim theo ten
+    // API tim kiem / loc phim theo ten va the loai
     @GetMapping("/search")
-    public ResponseEntity<?> searchMoviesByTitle(@RequestParam String title) {
-        String normalizedTitle = title.trim();
-
-        if (normalizedTitle.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "message", "Tên phim không được để trống"));
-        }
-
-        List<Movie> movies = movieService.searchMoviesByTitle(normalizedTitle);
-        return ResponseEntity.ok(movies);
+    public List<Movie> searchMovies(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) Integer genreId) {
+        return movieService.searchMovies(title, genreId);
     }
 }

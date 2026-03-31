@@ -25,8 +25,14 @@ public class MovieService {
         return movieRepository.findById(id);
     }
 
-    // Tim phim theo tieu de
-    public List<Movie> searchMoviesByTitle(String title) {
-        return movieRepository.findByTitleContainingIgnoreCase(title);
+    //Tìm kiếm phim theo tên và thể loại
+    public List<Movie> searchMovies(String title, Integer genreId) {
+        String normalizedTitle = title != null ? title.trim() : null;
+
+        if (normalizedTitle != null && normalizedTitle.isEmpty()) {
+            normalizedTitle = null;
+        }
+
+        return movieRepository.searchMovies(normalizedTitle, genreId);
     }
 }
