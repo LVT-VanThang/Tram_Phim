@@ -1,6 +1,7 @@
 package com.example.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -17,12 +18,15 @@ import com.example.entity.Movie;
 import com.example.entity.Room;
 import com.example.entity.Seat;
 import com.example.entity.Showtime;
+import com.example.repository.BookingRepository;
 import com.example.repository.SeatRepository;
 import com.example.repository.ShowtimeRepository;
 import com.example.repository.TicketRepository;
 
 @Service
 public class ShowtimeService {
+
+    private static final long PENDING_HOLD_MINUTES = 5L;
 
     @Autowired
     private ShowtimeRepository showtimeRepository;
@@ -33,38 +37,51 @@ public class ShowtimeService {
     @Autowired
     private TicketRepository ticketRepository;
 
-    //Lấy danh sách tất cả các suất chiếu
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    // API lay danh sach tat ca cac suat chieu
     public List<ShowtimeResponse> getAllShowtimes() {
         return showtimeRepository.findAllWithMovieAndRoom()
                 .stream()
                 .map(this::toResponse)
                 .toList();
     }
-    //Lấy suất chiếu bằng id phim
+
+    // API lay suat chieu bang id phim
     public List<ShowtimeResponse> getShowtimesByMovieId(Integer movieId) {
         return showtimeRepository.findByMovieId(movieId)
                 .stream()
                 .map(this::toResponse)
                 .toList();
     }
-    //Lấy suất chiếu bằng id phim và ngày
+
+    // API lay suat chieu bang id phim va ngay
     public List<ShowtimeResponse> getShowtimesByMovieIdAndDate(Integer movieId, LocalDate showDate) {
         return showtimeRepository.findByMovieIdAndShowDate(movieId, showDate)
                 .stream()
                 .map(this::toResponse)
                 .toList();
     }
-    //Lấy thông tin 1 suất chiếu
+
+    // API lay thong tin 1 suat chieu
     public ShowtimeResponse getShowtimeById(Integer showtimeId) {
         return toResponse(getShowtimeOrThrow(showtimeId));
     }
-    //Lấy tất cả ghế bằng mã suất chiếu
+
+    // API lay tat ca ghe theo suat chieu
     public List<ShowtimeSeatResponse> getSeatsByShowtimeId(Integer showtimeId) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime pendingValidAfter = now.minusMinutes(PENDING_HOLD_MINUTES);
+
+        bookingRepository.cancelExpiredPendingBookings(pendingValidAfter);
+
         Showtime showtime = getShowtimeOrThrow(showtimeId);
         Integer roomId = showtime.getRoom().getRoom_id();
 
         List<Seat> seats = seatRepository.findAllByRoomId(roomId);
-        Set<Integer> bookedSeatIds = Set.copyOf(ticketRepository.findBookedSeatIdsByShowtimeId(showtimeId));
+        Set<Integer> bookedSeatIds = Set.copyOf(
+                ticketRepository.findActiveBookedSeatIdsByShowtimeId(showtimeId, pendingValidAfter));
 
         return seats.stream()
                 .map(seat -> new ShowtimeSeatResponse(
@@ -103,6 +120,6 @@ public class ShowtimeService {
         return showtimeRepository.findDetailById(showtimeId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Không tìm thấy suất chiếu voi ID: " + showtimeId));
+                        "Không tìm thấy suất chiếu với ID: " + showtimeId));
     }
 }
