@@ -4,6 +4,11 @@ import { HomePage } from './pages/HomePage';
 import { MovieListPage } from './pages/MovieListPage';
 import { RegisterPage } from './pages/RegisterPage';
 
+
+
+import { AdminLayout } from './layouts/AdminLayout';
+import { AdminMoviePage } from './pages/admin/AdminMoviePage';
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -13,6 +18,16 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+
+
+
+        {/* ROUTES CHO ADMIN (Được bọc trong AdminLayout) */}
+        <Route path="/admin" element={<AdminLayout />}>
+          {/* Khi vào /admin/movies, nó sẽ render AdminMoviePage lọt vào vị trí <Outlet /> của Layout */}
+          <Route path="movies" element={<AdminMoviePage />} />
+        </Route>
+
+
       </Routes>
     </BrowserRouter>
   );
