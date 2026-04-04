@@ -24,6 +24,15 @@ public class BookingResponse {
                            Integer showtimeId,
                            List<Integer> seatIds,
                            BigDecimal totalPrice,
+                           String status) {
+        this(message, bookingId, showtimeId, seatIds, totalPrice, status, null);
+    }
+
+    public BookingResponse(String message,
+                           Integer bookingId,
+                           Integer showtimeId,
+                           List<Integer> seatIds,
+                           BigDecimal totalPrice,
                            String status,
                            PaymentInfo payment) {
         this.message = message;
