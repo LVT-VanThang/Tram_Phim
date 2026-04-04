@@ -2,6 +2,7 @@ package com.example.controller;
 
 import java.util.List;
 
+import com.example.dto.TopBookedMovieResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,5 +43,9 @@ public class MovieController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) Integer genreId) {
         return movieService.searchMovies(title, genreId);
+    }
+    @GetMapping("/top-booked")
+    public List<TopBookedMovieResponse> getTop5BookedMovies() {
+        return movieService.getTop5BookedMovies();
     }
 }

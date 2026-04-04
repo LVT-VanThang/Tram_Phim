@@ -3,6 +3,7 @@ package com.example.config;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import com.example.dto.BookingResponse;
 import com.example.dto.UnauthorizedErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.DispatcherType;
@@ -27,7 +28,9 @@ import jakarta.servlet.http.HttpServletResponse;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private static final String LOGIN_REQUIRED_MESSAGE = "Bạn cần đăng nhập để đặt vé";
+    private static final String BOOKING_LOGIN_REQUIRED_MESSAGE = "Bạn cần đăng nhập để đặt vé";
+    private static final String MY_BOOKINGS_LOGIN_REQUIRED_MESSAGE = "Bạn cần đăng nhập để xem lịch sử đặt vé";
+    private static final String BOOKING_DETAIL_LOGIN_REQUIRED_MESSAGE = "Bạn cần đăng nhập để xem chi tiết đặt vé";
 
     @Bean
     public AuthenticationEntryPoint jsonUnauthorizedEntryPoint(ObjectMapper objectMapper) {
@@ -38,7 +41,7 @@ public class SecurityConfig {
             String path = request.getRequestURI() != null ? request.getRequestURI() : "";
             objectMapper.writeValue(
                     response.getOutputStream(),
-                    UnauthorizedErrorResponse.of(path, LOGIN_REQUIRED_MESSAGE));
+                    UnauthorizedErrorResponse.of(path, BOOKING_LOGIN_REQUIRED_MESSAGE));
         };
     }
 
@@ -52,6 +55,31 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    @Bean
+    public AuthenticationEntryPoint bookingAuthenticationEntryPoint() {
+        return (request, response, authException) -> {
+            String requestUri = request.getRequestURI();
+            String message;
+
+            if (requestUri != null && requestUri.startsWith("/api/bookings/my")) {
+                message = MY_BOOKINGS_LOGIN_REQUIRED_MESSAGE;
+            } else if ("GET".equalsIgnoreCase(request.getMethod())
+                    && requestUri != null
+                    && requestUri.startsWith("/api/bookings/")) {
+                message = BOOKING_DETAIL_LOGIN_REQUIRED_MESSAGE;
+            } else {
+                message = BOOKING_LOGIN_REQUIRED_MESSAGE;
+            }
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            new ObjectMapper().writeValue(
+                    response.getOutputStream(),
+                    BookingResponse.messageOnly(message));
+        };
     }
 
     @Bean

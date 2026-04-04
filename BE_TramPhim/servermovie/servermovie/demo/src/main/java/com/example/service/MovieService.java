@@ -1,8 +1,11 @@
 package com.example.service;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.dto.TopBookedMovieResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,5 +37,10 @@ public class MovieService {
         }
 
         return movieRepository.searchMovies(normalizedTitle, genreId);
+    }
+
+    public List<TopBookedMovieResponse> getTop5BookedMovies() {
+        LocalDate currentDate = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        return movieRepository.findTop5BookedMovies(currentDate);
     }
 }

@@ -5,8 +5,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +20,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.dto.BookingDetailResponse;
 import com.example.dto.BookingResponse;
 import com.example.dto.CreateBookingRequest;
+import com.example.dto.MyBookingResponse;
 import com.example.entity.Booking;
 import com.example.entity.Seat;
 import com.example.entity.Showtime;
@@ -36,6 +41,8 @@ public class BookingServiceImpl implements BookingService {
     private static final long PENDING_HOLD_MINUTES = 5L;
 
     private static final String LOGIN_REQUIRED_MESSAGE = "Bạn cần đăng nhập để đặt vé";
+    private static final String MY_BOOKINGS_LOGIN_REQUIRED_MESSAGE = "Bạn cần đăng nhập để xem lịch sử đặt vé";
+    private static final String BOOKING_DETAIL_LOGIN_REQUIRED_MESSAGE = "Bạn cần đăng nhập để xem chi tiết đặt vé";
     private static final String SHOWTIME_REQUIRED_MESSAGE = "showtimeId không được để trống";
     private static final String SEAT_LIST_REQUIRED_MESSAGE = "Danh sách ghế không được để trống";
     private static final String DUPLICATE_SEAT_MESSAGE = "Danh sách ghế không được trùng nhau";
@@ -47,6 +54,8 @@ public class BookingServiceImpl implements BookingService {
     private static final String SEAT_ALREADY_BOOKED_SUFFIX = " đã được đặt";
     private static final String BOOKING_SUCCESS_MESSAGE = "Tạo đơn đặt vé thành công, vui lòng thanh toán để hoàn tất ";
     private static final String SHOWTIME_BOOKING_EXPIRED_MESSAGE = "Suất chiếu này đã hết thời gian đặt vé";
+    private static final String BOOKING_NOT_FOUND_MESSAGE = "Không tìm thấy booking";
+    private static final String BOOKING_FORBIDDEN_MESSAGE = "Bạn không có quyền xem booking này";
 
     @Autowired
     private BookingRepository bookingRepository;
@@ -63,13 +72,10 @@ public class BookingServiceImpl implements BookingService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private VietQrPaymentService vietQrPaymentService;
-
     @Override
     @Transactional
     public BookingResponse createBooking(CreateBookingRequest request) {
-        User currentUser = getCurrentUser();
+        User currentUser = getCurrentUser(LOGIN_REQUIRED_MESSAGE);
         List<Integer> normalizedSeatIds = validateRequest(request);
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime pendingValidAfter = now.minusMinutes(PENDING_HOLD_MINUTES);
@@ -133,34 +139,73 @@ public class BookingServiceImpl implements BookingService {
         }
         ticketRepository.saveAll(tickets);
 
-        int quantity = normalizedSeatIds.size();
-        var payment = vietQrPaymentService.buildPaymentInfo(
-                showtime.getPrice(),
-                quantity,
-                savedBooking.getTotal_price(),
-                savedBooking.getBooking_id());
-
         return new BookingResponse(
                 BOOKING_SUCCESS_MESSAGE,
                 savedBooking.getBooking_id(),
                 showtime.getShowtime_id(),
                 normalizedSeatIds,
                 savedBooking.getTotal_price(),
-                savedBooking.getStatus(),
-                payment);
+                savedBooking.getStatus());
     }
 
-    private User getCurrentUser() {
+    @Override
+    @Transactional(readOnly = true)
+    public List<MyBookingResponse> getMyBookings() {
+        User currentUser = getCurrentUser(MY_BOOKINGS_LOGIN_REQUIRED_MESSAGE);
+        List<Booking> bookings = bookingRepository.findAllByUserIdWithDetails(currentUser.getUser_id());
+
+        if (bookings.isEmpty()) {
+            return List.of();
+        }
+
+        List<Integer> bookingIds = bookings.stream()
+                .map(Booking::getBooking_id)
+                .toList();
+
+        List<Ticket> tickets = ticketRepository.findAllByBookingIdsWithSeat(bookingIds);
+        Map<Integer, List<Ticket>> ticketsByBookingId = groupTicketsByBookingId(tickets);
+
+        List<MyBookingResponse> responses = new ArrayList<>();
+        for (Booking booking : bookings) {
+            List<Ticket> bookingTickets = ticketsByBookingId.getOrDefault(
+                    booking.getBooking_id(),
+                    Collections.emptyList());
+
+            responses.add(toMyBookingResponse(booking, bookingTickets));
+        }
+
+        return responses;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BookingDetailResponse getBookingDetail(Integer bookingId) {
+        User currentUser = getCurrentUser(BOOKING_DETAIL_LOGIN_REQUIRED_MESSAGE);
+
+        Booking booking = bookingRepository.findByIdWithDetails(bookingId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        BOOKING_NOT_FOUND_MESSAGE));
+
+        if (!booking.getUser().getUser_id().equals(currentUser.getUser_id())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, BOOKING_FORBIDDEN_MESSAGE);
+        }
+
+        List<Ticket> tickets = ticketRepository.findAllByBookingIdsWithSeat(List.of(bookingId));
+        return toBookingDetailResponse(booking, tickets);
+    }
+
+    private User getCurrentUser(String loginRequiredMessage) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null
                 || !authentication.isAuthenticated()
                 || "anonymousUser".equals(authentication.getPrincipal())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, LOGIN_REQUIRED_MESSAGE);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, loginRequiredMessage);
         }
 
         return userRepository.findByUsernameAndStatus(authentication.getName(), 1)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, LOGIN_REQUIRED_MESSAGE));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, loginRequiredMessage));
     }
 
     private List<Integer> validateRequest(CreateBookingRequest request) {
@@ -200,5 +245,73 @@ public class BookingServiceImpl implements BookingService {
 
     private void cancelExpiredPendingBookings(LocalDateTime expiredBefore) {
         bookingRepository.cancelExpiredPendingBookings(expiredBefore);
+    }
+
+    private Map<Integer, List<Ticket>> groupTicketsByBookingId(List<Ticket> tickets) {
+        Map<Integer, List<Ticket>> ticketsByBookingId = new LinkedHashMap<>();
+
+        for (Ticket ticket : tickets) {
+            Integer bookingId = ticket.getBooking().getBooking_id();
+            ticketsByBookingId.computeIfAbsent(bookingId, key -> new ArrayList<>()).add(ticket);
+        }
+
+        return ticketsByBookingId;
+    }
+
+    private MyBookingResponse toMyBookingResponse(Booking booking, List<Ticket> tickets) {
+        List<Integer> seatIds = tickets.stream()
+                .map(ticket -> ticket.getSeat().getSeat_id())
+                .toList();
+
+        List<String> seatNumbers = tickets.stream()
+                .map(ticket -> ticket.getSeat().getSeat_number())
+                .toList();
+
+        Showtime showtime = booking.getShowtime();
+
+        return new MyBookingResponse(
+                booking.getBooking_id(),
+                showtime.getShowtime_id(),
+                showtime.getMovie().getMovie_id(),
+                showtime.getMovie().getTitle(),
+                showtime.getShow_date(),
+                showtime.getStart_time(),
+                showtime.getEnd_time(),
+                showtime.getRoom().getRoom_id(),
+                showtime.getRoom().getRoom_name(),
+                seatIds,
+                seatNumbers,
+                booking.getTotal_price(),
+                booking.getStatus(),
+                booking.getCreated_at());
+    }
+
+    private BookingDetailResponse toBookingDetailResponse(Booking booking, List<Ticket> tickets) {
+        List<Integer> seatIds = tickets.stream()
+                .map(ticket -> ticket.getSeat().getSeat_id())
+                .toList();
+
+        List<String> seatNumbers = tickets.stream()
+                .map(ticket -> ticket.getSeat().getSeat_number())
+                .toList();
+
+        Showtime showtime = booking.getShowtime();
+
+        return new BookingDetailResponse(
+                booking.getBooking_id(),
+                booking.getUser().getUser_id(),
+                showtime.getShowtime_id(),
+                showtime.getMovie().getMovie_id(),
+                showtime.getMovie().getTitle(),
+                showtime.getShow_date(),
+                showtime.getStart_time(),
+                showtime.getEnd_time(),
+                showtime.getRoom().getRoom_id(),
+                showtime.getRoom().getRoom_name(),
+                seatIds,
+                seatNumbers,
+                booking.getTotal_price(),
+                booking.getStatus(),
+                booking.getCreated_at());
     }
 }

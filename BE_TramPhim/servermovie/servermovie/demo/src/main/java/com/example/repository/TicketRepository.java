@@ -12,6 +12,16 @@ import com.example.entity.Ticket;
 public interface TicketRepository extends JpaRepository<Ticket, Integer> {
 
     @Query("""
+            select t
+            from Ticket t
+            join fetch t.booking b
+            join fetch t.seat
+            where b.booking_id in :bookingIds
+            order by b.booking_id desc, t.seat.seat_number asc, t.seat.seat_id asc
+            """)
+    List<Ticket> findAllByBookingIdsWithSeat(@Param("bookingIds") List<Integer> bookingIds);
+
+    @Query("""
             select distinct t.seat.seat_id
             from Ticket t
             join t.booking b
