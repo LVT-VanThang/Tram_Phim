@@ -115,27 +115,9 @@ export function MovieListPage() {
               <span className="text-blue-600 font-bold border-b-2 border-blue-600 font-headline">
                 Phim
               </span>
-              <a
-                className="text-slate-600 font-headline font-semibold hover:text-blue-500 transition-colors duration-200"
-                href="#"
-              >
-                Rạp
-              </a>
-              <a
-                className="text-slate-600 font-headline font-semibold hover:text-blue-500 transition-colors duration-200"
-                href="#"
-              >
-                Ưu đãi
-              </a>
-              <a
-                className="text-slate-600 font-headline font-semibold hover:text-blue-500 transition-colors duration-200"
-                href="#"
-              >
-                Thành viên
-              </a>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-end max-w-full">
             <div className="relative hidden lg:block">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
                 search
@@ -150,19 +132,21 @@ export function MovieListPage() {
             </div>
             {user ? (
               <>
-                <span
-                  className="hidden sm:inline text-sm font-medium text-slate-600 max-w-[120px] truncate"
-                  title={displayName}
+                <Link
+                  to="/ho-so"
+                  className="text-sm font-medium text-slate-700 hover:text-primary transition-colors text-right sm:text-left max-w-[min(100vw-8rem,28rem)] sm:max-w-md lg:max-w-xl xl:max-w-2xl"
+                  title="Xem thông tin cá nhân"
                 >
-                  {displayName}
-                </span>
+                  <span className="text-slate-500">Xin chào,</span>{' '}
+                  <span className="font-semibold text-slate-800 break-words">{displayName}</span>
+                </Link>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors text-sm"
+                  className="inline-flex items-center justify-center w-10 h-10 rounded-full text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors shrink-0"
+                  aria-label="Đăng xuất"
                 >
-                  <span className="material-symbols-outlined text-lg">logout</span>
-                  Đăng xuất
+                  <span className="material-symbols-outlined text-xl">logout</span>
                 </button>
               </>
             ) : (
@@ -345,7 +329,10 @@ function MovieCard({ movie }: { movie: Movie }) {
   const tags = movie.genres?.slice(0, 3) ?? [];
 
   return (
-    <div className="group relative bg-surface-container-lowest rounded-[2rem] overflow-hidden transition-all duration-300 hover:-translate-y-2">
+    <Link
+      to={`/phim/${movie.id}`}
+      className="group relative bg-surface-container-lowest rounded-[2rem] overflow-hidden transition-all duration-300 hover:-translate-y-2 block text-left"
+    >
       <div className="aspect-[2/3] relative overflow-hidden">
         <img
           alt={movie.title}
@@ -368,12 +355,9 @@ function MovieCard({ movie }: { movie: Movie }) {
           </span>
         </div>
         <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-          <button
-            type="button"
-            className="bg-white text-primary px-6 py-3 rounded-full font-headline font-bold shadow-xl pointer-events-auto transform translate-y-4 group-hover:translate-y-0 transition-transform"
-          >
-            Đặt vé ngay
-          </button>
+          <span className="bg-white text-primary px-6 py-3 rounded-full font-headline font-bold shadow-xl pointer-events-none transform translate-y-4 group-hover:translate-y-0 transition-transform">
+            Xem chi tiết & đặt vé
+          </span>
         </div>
       </div>
       <div className="p-6">
@@ -403,7 +387,7 @@ function MovieCard({ movie }: { movie: Movie }) {
           </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 

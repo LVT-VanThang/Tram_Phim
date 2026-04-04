@@ -48,64 +48,40 @@ export function LoginPage() {
   return (
     <div className="bg-surface text-on-surface min-h-screen flex items-center justify-center p-4 md:p-0">
       <main className="w-full max-w-6xl mx-auto flex flex-col md:flex-row min-h-[870px] bg-surface-container-lowest rounded-3xl overflow-hidden shadow-2xl shadow-primary/5">
-        <div className="hidden md:flex md:w-1/2 relative p-12 flex-col justify-between overflow-hidden">
+        <div className="hidden md:flex md:w-1/2 relative min-h-[520px] flex-col overflow-hidden bg-neutral-950 p-8 md:p-10">
           <div className="absolute inset-0 z-0">
             <img
-              alt="Cinematic Experience"
-              className="w-full h-full object-cover brightness-75 scale-105"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNAFm7koP9H7VP-Dn57wqSfLg7wOYU4-C5oykHpog8VxeuZ15OUmXKHHYp3_5PRv_4YQ08kuQ9gJWh0y1kfBrJ8xgKkL0MDDh5e2kZNIXsQdM6c26YNBUjgxZM_hjy9ennAIDcSheNmp9nu7jpT3HALY-XX0Svf4kJGRG3DTPzdAVpTulhCA7REiFC6Co1qT3dbXImlvBol7Be2z9JHj70GM97ps9n-n_mmkxo26pbQPpZKLBDrlyuvOFyUu21YgtdZyNYTiengBka"
+              alt=""
+              className="h-full w-full object-contain object-center"
+              src="https://img3.stockfresh.com/files/s/sgursozlu/m/80/4608921_stock-vector-cinema-poster-design-template.jpg"
+              referrerPolicy="no-referrer"
+              decoding="async"
             />
-            <div className="absolute inset-0 signature-gradient opacity-40 mix-blend-multiply" />
-            <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent" />
           </div>
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-8">
-              <Link to="/" className="text-white text-3xl font-black tracking-tighter brand hover:opacity-90">
-                CineAura
-              </Link>
-            </div>
-            <h1 className="text-white text-5xl font-extrabold tracking-tight leading-tight mb-4">
-              Khám phá <br />
-              Hào quang <br />
-              Điện ảnh.
-            </h1>
-            <p className="text-on-primary/90 text-lg font-medium max-w-md">
-              Trải nghiệm đặt vé thông minh, hiện đại và tinh tế nhất dành cho những tín đồ yêu phim thực thụ.
-            </p>
-          </div>
-          <div className="relative z-10 glass-effect p-6 rounded-2xl border border-white/20 flex items-center gap-4">
-            <div className="flex -space-x-3">
-              <img
-                className="w-10 h-10 rounded-full border-2 border-white object-cover"
-                alt=""
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhljPn93u1HJ9r5LWNYlDoBusQhxXZ0BOWG3ry78wwGcCanTNb37qXT_qxy07tsOQaJarS5KpLe3pwF6FEaLQe-9kbO8eaZ7TAeQPWGSITtgtVsZiPHCPaDpnctXNJ5oDIWf3wtr-6ng-1n2u6qRT7-Jo8TV0-0GuaFkhcHj7dt9UeSFIWk4SuSgGDsX1d8Mo-q641s1sWbvhQ95xKX9wkkGKFIu8UMKJ0aBCguW-mvW1pbSlO7XxnI4KlpA6PZxkuTr-NaspTGpKh"
-              />
-              <img
-                className="w-10 h-10 rounded-full border-2 border-white object-cover"
-                alt=""
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhzBndhICcPA6qKzfHG-NG60Kz3K6KqUIimSY68CIdvuNiRKY-RV-pBJpQk6WRNtSja1OFkn9yZSD5x_7Uj6o8iBXz4aeSzrsuyHsGWptuomffFPLXyXTy3qRmgWrjk0muRQFirApzZ3Qb8pm-DxyhmuaitUMcG6HSQ0KXzNb-5QmFfFoIblKsOJrsIiUZovRr1T_7J42H8tcLoNVLrz80fl0Ee0198RU2S6Aj30EIjOZ0I8gg5gBM27fosn2BrT9UhLkDJmu3w2RL"
-              />
-              <img
-                className="w-10 h-10 rounded-full border-2 border-white object-cover"
-                alt=""
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCokjbqfLFzzGCsJ3e2QzMIz_szrA2ibU50UVk_83gPfenM7xpDCAMmNIoBJ7CoJ32MuZCSOhqOH2bYLGPb1VxBJBqndkrzBXsMQmNnuMyR-Gm65UWM4uhHfg_n-zCWcM7AIUGlSY9YzHDp4lmCx663WKkVE2ZKp8kCEUQFZnkIE9NpMHJHJ0nWeTnKBLg_S71F2hso_oVfFHVt77Mi2kGyLoxDM4H9gDYzXMGn94aoaqaO09E_pAKe5PAnmB34bnJK0tSFJ197vp-O"
-              />
-            </div>
-            <p className="text-on-surface-variant text-sm font-medium">
-              Tham gia cùng <span className="text-primary font-bold">10,000+</span> thành viên CineAura ngay hôm nay.
+          <div className="relative z-10 shrink-0 space-y-2">
+            <Link
+              to="/"
+              className="inline-block text-white text-2xl md:text-3xl font-black tracking-tight brand hover:opacity-90 drop-shadow-[0_2px_12px_rgba(0,0,0,0.75)]"
+            >
+              CineAura Bright
+            </Link>
+            <p className="max-w-[16rem] text-sm font-semibold leading-snug text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.8)]">
+              Đặt vé — chọn ghế — thanh toán nhanh.
             </p>
           </div>
         </div>
 
-        <div className="w-full md:w-1/2 p-8 md:p-16 flex flex-col justify-center bg-white">
+        <div className="w-full md:w-1/2 p-8 md:p-16 flex flex-col justify-center bg-surface-container-lowest">
           <div className="mb-10 text-center md:text-left">
             <div className="md:hidden flex justify-center mb-6">
-              <Link to="/" className="text-primary text-3xl font-black tracking-tighter brand">
-                CineAura
+              <Link to="/" className="text-primary text-3xl font-black tracking-tight brand">
+                CineAura Bright
               </Link>
             </div>
-            <h2 className="text-3xl font-extrabold text-on-surface mb-2 tracking-tight">Chào mừng trở lại</h2>
-            <p className="text-on-surface-variant font-medium">Hãy đăng nhập để tiếp tục hành trình điện ảnh của bạn.</p>
+            <h2 className="text-3xl font-extrabold text-on-surface mb-2 tracking-tight">Đăng nhập</h2>
+            <p className="text-on-surface-variant font-medium">
+              Đặt vé, chọn ghế và thanh toán nhanh — đăng nhập để tiếp tục.
+            </p>
           </div>
 
           {registerNotice && (
@@ -203,47 +179,35 @@ export function LoginPage() {
               <div className="w-full border-t border-surface-container-high" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-outline-variant font-medium">Hoặc đăng nhập với</span>
+              <span className="px-4 bg-surface-container-lowest text-outline-variant font-medium">Hoặc đăng nhập với</span>
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              className="flex items-center justify-center gap-3 py-3 border border-outline-variant/20 rounded-2xl hover:bg-surface-container-low transition-colors duration-200 group"
-              onClick={() => alert('Tích hợp Google OAuth sẽ được bổ sung sau.')}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335"
-                />
-              </svg>
-              <span className="text-sm font-bold text-on-surface">Google</span>
-            </button>
-            <button
-              type="button"
-              className="flex items-center justify-center gap-3 py-3 border border-outline-variant/20 rounded-2xl hover:bg-surface-container-low transition-colors duration-200 group"
-              onClick={() => alert('Tích hợp Facebook OAuth sẽ được bổ sung sau.')}
-            >
-              <svg className="w-6 h-6" fill="#1877F2" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              <span className="text-sm font-bold text-on-surface">Facebook</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            className="mt-8 w-full flex items-center justify-center gap-3 py-3.5 border border-outline-variant/25 rounded-2xl hover:bg-surface-container-low transition-colors duration-200 group"
+            onClick={() => alert('Tích hợp Google OAuth sẽ được bổ sung sau.')}
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                fill="#4285F4"
+              />
+              <path
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                fill="#34A853"
+              />
+              <path
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+                fill="#FBBC05"
+              />
+              <path
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                fill="#EA4335"
+              />
+            </svg>
+            <span className="text-sm font-bold text-on-surface">Google</span>
+          </button>
 
           <div className="mt-12 text-center">
             <p className="text-on-surface-variant font-medium">
@@ -282,7 +246,7 @@ export function LoginPage() {
 
       <footer className="fixed bottom-4 left-1/2 -translate-x-1/2 w-full max-w-7xl px-8 hidden md:block">
         <div className="flex justify-between items-center py-2 opacity-50">
-          <p className="font-['Inter'] text-xs text-slate-500">© 2024 CineAura. Trải nghiệm điện ảnh thuần khiết.</p>
+          <p className="font-['Inter'] text-xs text-slate-500">© 2024 CineAura Bright. Đặt vé xem phim trực tuyến.</p>
           <div className="flex gap-4">
             <span className="material-symbols-outlined text-lg">local_movies</span>
             <span className="material-symbols-outlined text-lg">stadium</span>

@@ -90,6 +90,22 @@ export async function fetchMovies(): Promise<Movie[]> {
   return data.map((item) => normalizeMovie(item as Record<string, unknown>));
 }
 
+export async function fetchMovieById(id: number): Promise<Movie> {
+  const res = await fetch(`${apiBase}/api/movies/${id}`, { headers: authHeaders() });
+  if (res.status === 401 || res.status === 403) {
+    throw new Error('UNAUTHORIZED');
+  }
+  if (res.status === 404) {
+    throw new Error('NOT_FOUND');
+  }
+  if (!res.ok) {
+    const msg = await parseErrorMessage(res, 'Không tải được phim');
+    throw new Error(msg);
+  }
+  const data: unknown = await res.json();
+  return normalizeMovie(data as Record<string, unknown>);
+}
+
 export async function fetchGenres(): Promise<Genre[]> {
   const res = await fetch(`${apiBase}/api/genres`, { headers: authHeaders() });
   if (res.status === 401 || res.status === 403) {

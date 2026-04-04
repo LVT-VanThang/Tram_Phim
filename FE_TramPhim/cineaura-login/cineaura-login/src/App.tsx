@@ -1,8 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { LoginPage } from './login/LoginPage';
 import { HomePage } from './pages/HomePage';
+import { MovieDetailPage } from './pages/MovieDetailPage';
 import { MovieListPage } from './pages/MovieListPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { RegisterPage } from './pages/RegisterPage';
+import { SeatSelectionPage } from './pages/SeatSelectionPage';
 
 export default function App() {
   return (
@@ -10,8 +13,11 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/phim" element={<MovieListPage />} />
+        <Route path="/phim/:movieId" element={<MovieDetailPage />} />
+        <Route path="/dat-ve/:showtimeId" element={<SeatSelectionPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/ho-so" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

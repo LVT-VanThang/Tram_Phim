@@ -1,10 +1,95 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { LoginResponse } from '../api/auth';
+import { fetchMovies, type Movie } from '../api/movies';
 import { clearSession, getStoredSession } from '../auth/session';
+
+const POSTER_FALLBACK =
+  'https://placehold.co/480x720/eef1f4/595c5e?text=CineAura&font=source-sans-pro';
+
+/** Dùng khi API lỗi hoặc chưa đủ 3 phim — khớp dữ liệu mẫu từ backend */
+const FALLBACK_SPOTLIGHT: Movie[] = [
+  {
+    id: 1,
+    title: 'Avengers',
+    description: 'Marvel movie',
+    duration: 120,
+    posterUrl: 'https://image.tmdb.org/t/p/w500/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg',
+    releaseDate: '2024-01-01',
+    genres: [
+      { id: 1, name: 'Phiêu lưu' },
+      { id: 2, name: 'Hành động' },
+    ],
+  },
+  {
+    id: 2,
+    title: 'Titanic',
+    description: 'Love story',
+    duration: 150,
+    posterUrl: 'https://image.tmdb.org/t/p/w500/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg',
+    releaseDate: '2023-05-10',
+    genres: [
+      { id: 3, name: 'Tình cảm' },
+      { id: 4, name: 'Chính kịch' },
+    ],
+  },
+  {
+    id: 3,
+    title: 'Conjuring',
+    description: 'Horror movie',
+    duration: 110,
+    posterUrl: 'https://image.tmdb.org/t/p/w500/wVYREutTvI2tmxr6ujrHT704wGF.jpg',
+    releaseDate: '2022-10-01',
+    genres: [{ id: 5, name: 'Kinh dị' }],
+  },
+];
+
+function genreLine(m: Movie): string {
+  if (m.genres?.length) return m.genres.map((g) => g.name).join(' · ');
+  const t = m.title.toLowerCase();
+  if (t.includes('avenger')) return 'Phiêu lưu · Hành động';
+  if (t.includes('titanic')) return 'Tình cảm · Chính kịch';
+  if (t.includes('conjur')) return 'Kinh dị';
+  return 'Phim hay';
+}
+
+function pickPoster(m: Movie): string {
+  const u = m.posterUrl?.trim();
+  if (u && /^https?:\/\//i.test(u)) return u;
+  return POSTER_FALLBACK;
+}
+
+const HERO_BANNER_IMAGES = [
+  'https://thuonghieuvaphapluat.vn/Images/hoangduc/2023/02/13/01.jpg',
+  'https://cellphones.com.vn/sforum/wp-content/uploads/2022/03/1-43.jpg',
+  'https://genk.mediacdn.vn/thumb_w/640/2019/12/9/anh-1-15759025807712116411603.jpg',
+] as const;
 
 export function HomePage() {
   const [user, setUser] = useState<LoginResponse | null>(() => getStoredSession());
+  const [spotlight, setSpotlight] = useState<Movie[]>(FALLBACK_SPOTLIGHT);
+  const [heroSlideIndex, setHeroSlideIndex] = useState(0);
+  const heroSlideDirRef = useRef(1);
+
+  useEffect(() => {
+    const ms = 5000;
+    const id = window.setInterval(() => {
+      setHeroSlideIndex((i) => {
+        const d = heroSlideDirRef.current;
+        const next = i + d;
+        if (next >= HERO_BANNER_IMAGES.length) {
+          heroSlideDirRef.current = -1;
+          return i - 1;
+        }
+        if (next < 0) {
+          heroSlideDirRef.current = 1;
+          return i + 1;
+        }
+        return next;
+      });
+    }, ms);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     function sync() {
@@ -16,6 +101,28 @@ export function HomePage() {
     return () => {
       window.removeEventListener('storage', sync);
       window.removeEventListener('cineaura-session', sync);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await fetchMovies();
+        if (cancelled) return;
+        if (list.length >= 3) {
+          setSpotlight(list.slice(0, 3));
+        } else if (list.length > 0) {
+          const seen = new Set(list.map((m) => m.id));
+          const pad = FALLBACK_SPOTLIGHT.filter((m) => !seen.has(m.id));
+          setSpotlight([...list, ...pad].slice(0, 3));
+        }
+      } catch {
+        if (!cancelled) setSpotlight(FALLBACK_SPOTLIGHT);
+      }
+    })();
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -48,19 +155,6 @@ export function HomePage() {
               >
                 Phim
               </Link>
-              <a
-                className="text-slate-600 font-medium font-headline tracking-tight hover:text-blue-500 transition-colors duration-200"
-                href="#"
-              >
-                Rạp chiếu
-              </a>
-              <a
-                className="text-slate-600 font-medium font-headline tracking-tight hover:text-blue-500 transition-colors duration-200"
-                href="#"
-              >
-                Ưu đãi
-              </a>
-             
             </div>
           </div>
           <div className="flex items-center gap-6">
@@ -74,19 +168,24 @@ export function HomePage() {
                 search
               </span>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end max-w-full">
               {user ? (
                 <>
-                  <span className="hidden sm:inline text-sm font-medium text-slate-600 max-w-[140px] truncate" title={displayName}>
-                    Xin chào, {displayName}
-                  </span>
+                  <Link
+                    to="/ho-so"
+                    className="text-sm font-medium text-slate-700 hover:text-primary transition-colors text-right sm:text-left max-w-[min(100vw-8rem,28rem)] sm:max-w-md lg:max-w-xl xl:max-w-2xl"
+                    title="Xem thông tin cá nhân"
+                  >
+                    <span className="text-slate-500">Xin chào,</span>{' '}
+                    <span className="font-semibold text-slate-800 break-words">{displayName}</span>
+                  </Link>
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors text-sm sm:text-base"
+                    className="inline-flex items-center justify-center w-10 h-10 rounded-full text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors shrink-0"
+                    aria-label="Đăng xuất"
                   >
-                    <span className="material-symbols-outlined text-lg">logout</span>
-                    Đăng xuất
+                    <span className="material-symbols-outlined text-xl">logout</span>
                   </button>
                 </>
               ) : (
@@ -112,49 +211,75 @@ export function HomePage() {
       </nav>
 
       <main className="pt-20">
-        <section className="relative px-8 py-12 max-w-7xl mx-auto">
-          <div className="relative h-[600px] rounded-[2.5rem] overflow-hidden group">
-            <img
-              className="w-full h-full object-cover"
-              alt="Dune Part Two hero"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxKFq38gUdGpKjQZCHH32QBiGNphIipFsi9B03YRqfuwO4YRsdD_s3-kjp5g-yoTDJOP2RghFJkNtTdXqkBpEAdi8B8jiJQPvQmNJGDDkCO7d8lbRMC9zPOf8UYql-RVdoS4svtP8X02bNHgFdihvlwhrgQ55_zrdrIRcEVUmnQlnzLtRNjszh8RTclebAbXaoElAAckWJIkyeNn6iKPaVpwbwH2jOTey2KPKOMGiZi2t72sou4tJVo-10gFkzrvWWd-3xviWxpfrq"
+        <section className="relative px-4 sm:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
+          <div className="relative w-full rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden bg-black isolate shadow-lg shadow-black/15 ring-1 ring-white/5">
+            <div className="relative w-full h-[min(46vh,440px)] min-h-[220px] sm:min-h-[260px] sm:h-[min(48vh,480px)]">
+              {HERO_BANNER_IMAGES.map((src, idx) => (
+                <img
+                  key={src}
+                  alt=""
+                  className={`absolute inset-0 m-auto h-full w-full object-contain object-center transition-opacity duration-500 ease-out ${
+                    idx === heroSlideIndex ? 'opacity-100 z-[1]' : 'opacity-0 z-0 pointer-events-none'
+                  }`}
+                  src={src}
+                  referrerPolicy="no-referrer"
+                  decoding="async"
+                  fetchPriority={idx === 0 ? 'high' : 'low'}
+                  loading={idx === 0 ? 'eager' : 'lazy'}
+                  sizes="(min-width: 1280px) 1152px, (min-width: 768px) 92vw, 100vw"
+                />
+              ))}
+            </div>
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-[46%] max-h-[280px] bg-gradient-to-t from-black/70 from-15% via-black/25 via-50% to-transparent"
+              aria-hidden
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-12">
-              <div className="max-w-2xl space-y-6">
-                <div className="flex items-center gap-3">
-                  <span className="px-3 py-1 bg-primary text-on-primary rounded-lg text-xs font-bold tracking-widest uppercase">
-                    Phim tiêu điểm
+            <div className="absolute inset-x-0 bottom-0 z-[3] flex flex-col gap-4 p-6 pb-7 sm:p-8 sm:pb-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
+                <div className="min-w-0 max-w-xl space-y-3">
+                  <span className="inline-block px-2.5 py-0.5 bg-white/70 text-slate-900 rounded text-[10px] font-semibold tracking-wide uppercase">
+                    Đặt vé online
                   </span>
-                  <span className="px-3 py-1 bg-white/20 backdrop-blur-md text-white rounded-lg text-xs font-bold tracking-widest uppercase">
-                    IMAX
-                  </span>
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white/60 font-headline tracking-tight leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">
+                    Suất đang mở — đặt trên điện thoại
+                  </h1>
+                  <p className="text-sm sm:text-base text-white/45 max-w-md font-normal leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                    Chọn phim, giờ chiếu và ghế; thanh toán xong nhận mã vé qua email.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {HERO_BANNER_IMAGES.map((_, idx) => (
+                      <button
+                        key={HERO_BANNER_IMAGES[idx]}
+                        type="button"
+                        aria-label={`Banner ${idx + 1}`}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          idx === heroSlideIndex ? 'w-7 bg-white' : 'w-1.5 bg-white/45 hover:bg-white/75'
+                        }`}
+                        onClick={() => setHeroSlideIndex(idx)}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <h1 className="text-6xl md:text-8xl font-black text-white font-headline tracking-tighter leading-none">
-                  Dune: Part Two
-                </h1>
-                <p className="text-lg text-white/80 max-w-lg font-medium leading-relaxed">
-                  Hành trình tiếp theo của Paul Atreides khi anh hợp lực với Chani và người Fremen để trả thù những kẻ đã hủy diệt gia đình mình.
-                </p>
-                <div className="flex items-center gap-4 pt-4">
-                  <button
-                    type="button"
-                    className="px-8 py-4 bg-gradient-to-r from-primary to-primary-container text-white rounded-full font-bold text-lg hover:scale-105 transition-transform flex items-center gap-2"
+                <div className="flex shrink-0 flex-row items-center justify-end gap-2.5 self-end">
+                  <Link
+                    to="/phim"
+                    className="inline-flex justify-center px-6 py-3 rounded-full font-bold text-base transition-colors flex items-center gap-2 whitespace-nowrap border border-white/40 bg-black/35 text-white hover:bg-black/50"
+                  >
+                    <span className="material-symbols-outlined text-xl">calendar_month</span>
+                    Lịch chiếu
+                  </Link>
+                  <Link
+                    to="/phim"
+                    className="inline-flex justify-center px-6 py-3 bg-white text-slate-900 rounded-full font-bold text-base hover:bg-white/90 transition-colors flex items-center gap-2 whitespace-nowrap shadow-md shadow-black/20"
                   >
                     <span
-                      className="material-symbols-outlined"
+                      className="material-symbols-outlined text-xl"
                       style={{ fontVariationSettings: "'FILL' 1" }}
                     >
                       confirmation_number
                     </span>
-                    Đặt Vé Ngay
-                  </button>
-                  <button
-                    type="button"
-                    className="px-8 py-4 bg-white/10 backdrop-blur-md border border-white/30 text-white rounded-full font-bold text-lg hover:bg-white/20 transition-all flex items-center gap-2"
-                  >
-                    <span className="material-symbols-outlined">play_circle</span>
-                    Xem Trailer
-                  </button>
+                    Đặt vé ngay
+                  </Link>
                 </div>
               </div>
             </div>
@@ -215,63 +340,9 @@ export function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="md:col-span-2 md:row-span-2 group relative overflow-hidden rounded-[2rem] bg-surface-container-lowest">
-              <img
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 min-h-[320px]"
-                alt="Godzilla x Kong"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIcOeIH_fr6NC98OoFwCBMUkoMER3KAX04oO_BHzjHtmrgtdMgxGuhQygUgUV8uKvuvpWDqzakYavgkmXjeLo0cmnKOnLCKxRc7n9N_HkjJqFQ7DK_Bf0YCidCh5aWjVHmgiicM3hQksa_ZWRzEfQJi1atybLWIqO7wMWgyt6mRHXiq8_HT2skfPuhB_9FYTwSFK5Nb94ow29WCpzj1xA426HMXfuZ_khf2Px2Opof3kA8fV53rVOKfwf-qRSUr0EKOH4II2xkgPp5"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-8">
-                <div className="text-white">
-                  <h3 className="text-3xl font-bold font-headline mb-2">Godzilla x Kong: Đế Chế Mới</h3>
-                  <div className="flex items-center gap-4 text-sm font-medium mb-6">
-                    <span className="flex items-center gap-1">
-                      <span
-                        className="material-symbols-outlined text-yellow-400 text-sm"
-                        style={{ fontVariationSettings: "'FILL' 1" }}
-                      >
-                        star
-                      </span>{' '}
-                      8.8
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">schedule</span> 115 Phút
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    className="w-full py-3 bg-primary text-white rounded-xl font-bold"
-                  >
-                    Đặt Vé
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <MovieCard
-              title="Kung Fu Panda 4"
-              meta="Hoạt hình • 94 Phút"
-              rating="8.5"
-              poster="https://lh3.googleusercontent.com/aida-public/AB6AXuDmPyHOgFehwvcgJsfg-FAOL9ixS8E3cWXGeocumE3y7XPW9xZ0Kee6niqPHWwm8XOY_5BS7NM-fLHSQF0zhMdgll8YjR_CsGIWYUbGBPbO4pYsIFkMWCSfPmJ0Q9KjIh-H_T22FRjTS5jxFuGvZSS42L604fqyQ4IuVOKAs5hmKYQJpEq6pCY_i5Oxe2IjUrWJFaW-ymwwowwmgPHJEMtUrWvBZXXdWY4Rs3TBWj0PXxkwFvl-6ruBRXSy6R7IblJPgJ7RRa9S3vWX"
-            />
-            <MovieCard
-              title="Ngày Tận Thế"
-              meta="Hành động • 109 Phút"
-              rating="7.9"
-              poster="https://lh3.googleusercontent.com/aida-public/AB6AXuBEH78rl9Mxm8lB3s-yp0TE1TVDe0_Jbox3rgOp4MKUTEwuVHEcwj5ivK_sw3myk0CIylVDoiMSaP-maPWGoquYn0smJnknzCHVLY1SxCeXrWbdnqBHkWAACmPZaUwYMu7m-tVENHmddexXoCUeR4umPlOJ9RKR8wqPfX45CQyrIWQUS6ORBBBaJq-ZfEWBHW08FrdOrkuL_S4zOWkJrmyOmzzatH5l6XTCIm56osXZEBbm9JL7KYUCrF9T9yjHslss_SwkSUJ7dRgp"
-            />
-            <MovieCard
-              title="Inside Out 2"
-              meta="Hoạt hình • 100 Phút"
-              rating="9.2"
-              poster="https://lh3.googleusercontent.com/aida-public/AB6AXuChHZQiLF82uBhFjI3p3vFgk44JbEBIOogJ2ZR13yrIZqF7erpUEq3MyWQFKMLcuDlfXwCWdIt3VOgpPlggM_UrEW3L1QqPsFgm7BHvEMKLKVJ-2fABl9fKC_bqrTzdfHyxhQpf5pJvlJcQoIKMEQgmBFJF5jeIeOEt5DqQIV-P6bZekwb1IslaK6qXoB9_tSk_gkqIKbtwOxAYa3wO5KSdm7JazrdE6BN98NSO8-_dEvW7crgFs3k_zWgnRe3gQP51OJ-YlU2hhAyF"
-            />
-            <MovieCard
-              title="Furiosa: Mad Max"
-              meta="Hành động • 148 Phút"
-              rating="8.4"
-              poster="https://lh3.googleusercontent.com/aida-public/AB6AXuBLZ1z5f3ZQCkZuqsMiX62mSGNJgKv3iIlMNQDJqrfp_fA8D_xw1a2FqW9JN0CULDRHEhCmeVzbv6MGGZ86RqhW_VS_IZdVIIrWqYjrVnAEQQdqrJjs1OFgrg_fyvVFptceFPcpeQSQOOkoFBINsF0QsTwLxhvqw88EYsm4wm0nApTdTNWXq5xGWYC1vs93K27ytUc77_cUJm5lKNCpbp8GM6vzybFvnU41XKHuZ06hOWjpCqK75KfF93Avcu6f2hOglLS0p7uZXbFa"
-            />
+            {spotlight[0] && <SpotlightFeatureCard movie={spotlight[0]} />}
+            {spotlight[1] && <SpotlightSideCard movie={spotlight[1]} />}
+            {spotlight[2] && <SpotlightSideCard movie={spotlight[2]} />}
           </div>
         </section>
 
@@ -418,7 +489,7 @@ export function HomePage() {
       </main>
 
       <footer className="bg-slate-50 w-full pt-16 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 px-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 px-8 max-w-7xl mx-auto">
           <div className="space-y-6">
             <Link className="text-3xl font-bold text-blue-600 font-headline tracking-tighter" to="/">
               CineAura
@@ -517,32 +588,6 @@ export function HomePage() {
               </li>
             </ul>
           </div>
-          <div>
-            <h4 className="font-bold font-headline text-lg mb-6">Tải ứng dụng</h4>
-            <p className="text-slate-500 font-medium mb-6">Tải ứng dụng CineAura để đặt vé nhanh hơn.</p>
-            <div className="space-y-3">
-              <button
-                type="button"
-                className="w-full bg-black text-white px-6 py-3 rounded-xl flex items-center justify-center gap-3 hover:bg-slate-800 transition-colors"
-              >
-                <span className="material-symbols-outlined">ios</span>
-                <div className="text-left">
-                  <p className="text-[10px] uppercase leading-none opacity-60">Download on the</p>
-                  <p className="text-lg font-bold leading-none">App Store</p>
-                </div>
-              </button>
-              <button
-                type="button"
-                className="w-full bg-black text-white px-6 py-3 rounded-xl flex items-center justify-center gap-3 hover:bg-slate-800 transition-colors"
-              >
-                <span className="material-symbols-outlined">shop</span>
-                <div className="text-left">
-                  <p className="text-[10px] uppercase leading-none opacity-60">Get it on</p>
-                  <p className="text-lg font-bold leading-none">Google Play</p>
-                </div>
-              </button>
-            </div>
-          </div>
         </div>
         <div className="max-w-7xl mx-auto px-8 mt-16 pt-8 border-t border-slate-200 text-center">
           <p className="text-slate-400 text-sm">© 2024 CineAura. Tất cả quyền được bảo lưu.</p>
@@ -552,42 +597,88 @@ export function HomePage() {
   );
 }
 
-function MovieCard({
-  title,
-  meta,
-  rating,
-  poster,
-}: {
-  title: string;
-  meta: string;
-  rating: string;
-  poster: string;
-}) {
+function SpotlightFeatureCard({ movie }: { movie: Movie }) {
+  const poster = pickPoster(movie);
+  const g = genreLine(movie);
+  const dur = movie.duration != null ? `${movie.duration} phút` : '—';
+
   return (
-    <div className="group bg-surface-container-lowest rounded-[2rem] overflow-hidden transition-all hover:shadow-2xl hover:-translate-y-2">
-      <div className="aspect-[2/3] overflow-hidden relative">
-        <img className="w-full h-full object-cover" alt={title} src={poster} />
-        <div className="absolute top-4 right-4 px-2 py-1 bg-white/90 backdrop-blur-md rounded-lg flex items-center gap-1 text-xs font-bold text-on-surface">
-          <span
-            className="material-symbols-outlined text-yellow-500 text-xs"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            star
-          </span>{' '}
-          {rating}
+    <Link
+      to={`/phim/${movie.id}`}
+      className="md:col-span-2 md:row-span-2 group relative block overflow-hidden rounded-[2rem] bg-surface-container-lowest ring-1 ring-black/5 shadow-md"
+    >
+      <img
+        className="w-full h-full min-h-[300px] md:min-h-[440px] object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+        alt={movie.title}
+        src={poster}
+        onError={(e) => {
+          const el = e.currentTarget;
+          if (el.dataset.fb === '1') return;
+          el.dataset.fb = '1';
+          el.src = POSTER_FALLBACK;
+        }}
+      />
+      <div className="absolute top-4 left-4 right-4 z-10 flex flex-wrap items-center gap-2">
+        <span className="rounded-lg bg-black/55 backdrop-blur-sm px-3 py-1.5 text-xs font-bold text-white">
+          {g}
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-lg bg-black/55 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm">
+          <span className="material-symbols-outlined text-sm">schedule</span>
+          {dur}
+        </span>
+      </div>
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-6 pb-6 pt-24 md:px-8 md:pb-8 md:pt-28">
+        <h3 className="mb-2 font-headline text-2xl font-bold text-white md:text-3xl">{movie.title}</h3>
+        <p className="mb-4 line-clamp-2 text-sm text-white/85">{movie.description?.trim() || g}</p>
+        <span className="inline-flex w-full items-center justify-center rounded-xl bg-primary py-3 text-center text-sm font-bold text-white md:w-auto md:px-8">
+          Đặt vé
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function SpotlightSideCard({ movie }: { movie: Movie }) {
+  const poster = pickPoster(movie);
+  const g = genreLine(movie);
+  const dur = movie.duration != null ? `${movie.duration} phút` : '—';
+
+  return (
+    <Link
+      to={`/phim/${movie.id}`}
+      className="group overflow-hidden rounded-[2rem] bg-surface-container-lowest transition-all hover:-translate-y-1 hover:shadow-xl"
+    >
+      <div className="relative aspect-[2/3] overflow-hidden">
+        <img
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          alt={movie.title}
+          src={poster}
+          onError={(e) => {
+            const el = e.currentTarget;
+            if (el.dataset.fb === '1') return;
+            el.dataset.fb = '1';
+            el.src = POSTER_FALLBACK;
+          }}
+        />
+        <div className="absolute left-3 top-3 flex max-w-[90%] flex-col gap-1.5">
+          <span className="rounded-md bg-black/55 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+            {g}
+          </span>
+          <span className="inline-flex w-fit items-center gap-0.5 rounded-md bg-white/90 px-2 py-1 text-[10px] font-bold text-on-surface">
+            <span className="material-symbols-outlined text-xs">schedule</span>
+            {dur}
+          </span>
         </div>
       </div>
-      <div className="p-6">
-        <h3 className="text-xl font-bold font-headline text-on-surface line-clamp-1 mb-1">{title}</h3>
-        <p className="text-slate-500 text-sm font-medium mb-4">{meta}</p>
-        <button
-          type="button"
-          className="w-full py-3 border border-primary/20 text-primary hover:bg-primary hover:text-white rounded-xl font-bold transition-all"
-        >
-          Đặt Vé
-        </button>
+      <div className="p-5">
+        <h3 className="mb-1 font-headline text-lg font-bold text-on-surface line-clamp-2 group-hover:text-primary">
+          {movie.title}
+        </h3>
+        <p className="text-sm font-medium text-slate-500">
+          {g} · {dur}
+        </p>
       </div>
-    </div>
+    </Link>
   );
 }
 
