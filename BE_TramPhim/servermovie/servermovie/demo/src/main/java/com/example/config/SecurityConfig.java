@@ -3,25 +3,24 @@ package com.example.config;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import com.example.dto.UnauthorizedErrorResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import com.example.util.JwtFilter;
-
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.example.dto.UnauthorizedErrorResponse;
+import com.example.util.JwtFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
@@ -58,7 +57,6 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationEntryPoint jsonUnauthorizedEntryPoint)
             throws Exception {
         System.out.println(">>> SECURITY CONFIG LOADED <<<");
-
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -73,9 +71,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/genres/**").permitAll()
                         .requestMatchers("/api/movies/**").permitAll()
                         .requestMatchers("/api/showtimes/**").permitAll()
-                        .anyRequest().authenticated() // Tất cả các request khác phải đăng nhập
+                        
+                        // ===== ĐÃ THÊM QUYỀN ADMIN Ở ĐÂY =====
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                        
+                        .anyRequest().authenticated()
                 );
-
         return http.build();
     }
 }
