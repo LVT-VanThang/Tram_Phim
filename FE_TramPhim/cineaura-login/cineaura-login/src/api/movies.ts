@@ -30,6 +30,14 @@ export type Movie = {
   releaseDate?: string | null;
   genres: { id: number; name: string }[];
 };
+export type MovieRequest = {
+  title: string;
+  description?: string;
+  duration?: number;
+  posterUrl?: string;
+  releaseDate?: string;
+  genreIds?: number[];
+};
 
 function pickId(obj: Record<string, unknown>, ...keys: string[]): number | undefined {
   for (const k of keys) {
@@ -124,4 +132,63 @@ export async function fetchGenres(): Promise<Genre[]> {
       name: String(g.genre_name ?? g.genreName ?? ''),
     };
   });
+}
+export async function createMovie(data: MovieRequest): Promise<Movie> {
+  const res = await fetch(`${apiBase}/api/admin/movies`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    const msg = await parseErrorMessage(res, "Không thể thêm phim");
+    throw new Error(msg);
+  }
+
+  const result = await res.json();
+  return normalizeMovie(result.movie);
+}
+export async function updateMovie(id: number, data: MovieRequest): Promise<Movie> {
+  const res = await fetch(`${apiBase}/api/admin/movies/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    const msg = await parseErrorMessage(res, "Không thể cập nhật phim");
+    throw new Error(msg);
+  }
+
+  const result = await res.json();
+  return normalizeMovie(result.movie);
+}
+export async function deleteMovie(id: number): Promise<void> {
+  const res = await fetch(`${apiBase}/api/admin/movies/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    const msg = await parseErrorMessage(res, "Không thể xoá phim");
+    throw new Error(msg);
+  }
 }

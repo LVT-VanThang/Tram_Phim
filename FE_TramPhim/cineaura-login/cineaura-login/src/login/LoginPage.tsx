@@ -28,7 +28,7 @@ export function LoginPage() {
     if (s.prefilledUsername) setUsername(s.prefilledUsername);
   }, [location.key, location.state]);
 
-  async function onSubmit(e: FormEvent) {
+ async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setRegisterNotice(null);
@@ -37,7 +37,24 @@ export function LoginPage() {
       const data = await loginApi(username.trim(), password);
       storeSession(remember, data);
       window.dispatchEvent(new Event('cineaura-session'));
-      navigate('/', { replace: true });
+
+      // ========================================================
+      // 🌟 KIỂM TRA QUYỀN ĐỂ CHUYỂN TRANG (CHUẨN TYPESCRIPT 100%)
+      // ========================================================
+      
+      // Kiểm tra xem mảng roles từ Java trả về có chứa quyền ADMIN không
+      const isAdmin = data.roles && (data.roles.includes('ADMIN') || data.roles.includes('ROLE_ADMIN'));
+
+      if (isAdmin) {
+        // Nếu tài khoản có quyền Admin -> Bay thẳng vào trang Quản trị
+        navigate('/admin', { replace: true });
+      } else {
+        // Nếu chỉ là User bình thường -> Về trang chủ mua vé
+        navigate('/', { replace: true });
+      }
+      
+      // ========================================================
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
     } finally {
