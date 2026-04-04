@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { createBooking } from '../api/bookings';
+import {
+  createBooking,
+  enrichPaymentForCheckout,
+  isPaymentUsable,
+  PAYMENT_FLOW_STORAGE_KEY,
+  type PaymentFlowState,
+} from '../api/bookings';
 import { fetchShowtimeById, fetchSeatsByShowtimeId, type ShowtimeSeatResponse } from '../api/showtimes';
 
 function groupSeatsByRow(seats: ShowtimeSeatResponse[]): [string, ShowtimeSeatResponse[]][] {
@@ -114,14 +120,45 @@ export function SeatSelectionPage() {
         showtimeId,
         seatIds: [...selected],
       });
-      alert(res.message ?? 'Đặt vé thành công!');
-      navigate(showtime ? `/phim/${showtime.movieId}` : '/phim');
+      const priceFallback = res.totalPrice ?? total;
+      if (res.bookingId == null) {
+        alert('Server không trả bookingId — không thể mở trang thanh toán. Kiểm tra response POST /api/bookings.');
+        navigate(showtime ? `/phim/${showtime.movieId}` : '/phim');
+        return;
+      }
+      const payment = enrichPaymentForCheckout(res.payment, res.bookingId, priceFallback) ?? res.payment;
+      if (!isPaymentUsable(payment, priceFallback)) {
+        alert(
+          'Đơn đã tạo nhưng thiếu dữ liệu thanh toán (STK, nội dung CK, số tiền). Cập nhật backend trả object payment (PaymentInfo), hoặc đặt VITE_CHECKOUT_ACCOUNT_NUMBER trong file .env (production bắt buộc).',
+        );
+        navigate(showtime ? `/phim/${showtime.movieId}` : '/phim');
+        return;
+      }
+      const payState: PaymentFlowState = {
+        bookingId: res.bookingId,
+        showtimeId: res.showtimeId ?? showtimeId,
+        movieId: showtime?.movieId,
+        movieTitle: showtime?.movieTitle,
+        showDate: showtime?.showDate,
+        startTime: showtime?.startTime,
+        formatLabel: showtime?.formatLabel,
+        seatLabels: selectedList.map((s) => s.label),
+        message: res.message,
+        totalPrice: priceFallback,
+        payment,
+      };
+      try {
+        sessionStorage.setItem(PAYMENT_FLOW_STORAGE_KEY, JSON.stringify(payState));
+      } catch {
+        /* ignore */
+      }
+      navigate('/thanh-toan', { state: payState });
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Đặt vé thất bại');
     } finally {
       setBooking(false);
     }
-  }, [navigate, selected, showtime, showtimeId]);
+  }, [navigate, selected, selectedList, showtime, showtimeId, total]);
 
   if (!Number.isFinite(showtimeId) || showtimeId <= 0) {
     return (

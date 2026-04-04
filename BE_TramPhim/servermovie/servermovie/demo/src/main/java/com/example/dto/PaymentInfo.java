@@ -24,6 +24,10 @@ public class PaymentInfo {
     private String transferContent;
     /** Ảnh QR (VietQR) — FE có thể dùng trực tiếp làm src ảnh */
     private String qrImageUrl;
+    /** Mã NH VietQR (vd MBBank) — FE dựng lại URL nếu cần */
+    private String vietQrBankId;
+    /** Template ảnh VietQR (vd compact2) */
+    private String qrTemplate;
     private String paymentDescription;
 
     public String getBankName() {
@@ -96,6 +100,22 @@ public class PaymentInfo {
 
     public void setQrImageUrl(String qrImageUrl) {
         this.qrImageUrl = qrImageUrl;
+    }
+
+    public String getVietQrBankId() {
+        return vietQrBankId;
+    }
+
+    public void setVietQrBankId(String vietQrBankId) {
+        this.vietQrBankId = vietQrBankId;
+    }
+
+    public String getQrTemplate() {
+        return qrTemplate;
+    }
+
+    public void setQrTemplate(String qrTemplate) {
+        this.qrTemplate = qrTemplate;
     }
 
     public String getPaymentDescription() {

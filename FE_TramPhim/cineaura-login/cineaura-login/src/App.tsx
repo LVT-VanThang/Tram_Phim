@@ -5,6 +5,7 @@ import { MovieDetailPage } from './pages/MovieDetailPage';
 import { MovieListPage } from './pages/MovieListPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { RegisterPage } from './pages/RegisterPage';
+import { PaymentPage } from './pages/PaymentPage';
 import { SeatSelectionPage } from './pages/SeatSelectionPage';
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/phim" element={<MovieListPage />} />
         <Route path="/phim/:movieId" element={<MovieDetailPage />} />
         <Route path="/dat-ve/:showtimeId" element={<SeatSelectionPage />} />
+        <Route path="/thanh-toan" element={<PaymentPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/ho-so" element={<ProfilePage />} />

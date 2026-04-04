@@ -73,6 +73,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/genres/**").permitAll()
                         .requestMatchers("/api/movies/**").permitAll()
                         .requestMatchers("/api/showtimes/**").permitAll()
+                        .requestMatchers("/api/webhooks/**").permitAll()
                         .anyRequest().authenticated() // Tất cả các request khác phải đăng nhập
                 );
 

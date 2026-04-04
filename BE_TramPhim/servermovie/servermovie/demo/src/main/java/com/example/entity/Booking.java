@@ -44,4 +44,11 @@ public class Booking {
     private String status;
 
     private LocalDateTime created_at;
+
+    /** Id giao dịch SePay — chống xử lý trùng khi SePay gọi lại webhook */
+    @Column(name = "sepay_transaction_id", unique = true)
+    private Long sepayTransactionId;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
 }

@@ -39,6 +39,8 @@ public class VietQrPaymentService {
         info.setAmountVnd(amountVnd);
         info.setTransferContent(transferContent);
         info.setQrImageUrl(qrUrl);
+        info.setVietQrBankId(paymentProperties.getVietQrBankId());
+        info.setQrTemplate(paymentProperties.getQrTemplate());
         info.setPaymentDescription("Quét mã VietQR bằng app ngân hàng hoặc VNPay để chuyển khoản");
         return info;
     }

@@ -5,8 +5,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.dto.BookingHistoryItem;
 import com.example.dto.BookingResponse;
+import com.example.dto.BookingStatusResponse;
 import com.example.dto.CreateBookingRequest;
 import com.example.entity.Booking;
 import com.example.entity.Seat;
@@ -148,6 +153,79 @@ public class BookingServiceImpl implements BookingService {
                 savedBooking.getTotal_price(),
                 savedBooking.getStatus(),
                 payment);
+    }
+
+    @Override
+    public BookingStatusResponse getBookingStatusForCurrentUser(Integer bookingId) {
+        if (bookingId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "bookingId không hợp lệ");
+        }
+        User currentUser = getCurrentUser();
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn"));
+
+        if (booking.getUser() == null
+                || !currentUser.getUser_id().equals(booking.getUser().getUser_id())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Không có quyền xem đơn này");
+        }
+
+        BookingStatusResponse out = new BookingStatusResponse();
+        out.setBookingId(booking.getBooking_id());
+        out.setStatus(booking.getStatus());
+        if (booking.getPaidAt() != null) {
+            out.setPaidAt(booking.getPaidAt().toString());
+        }
+        return out;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookingHistoryItem> listMyBookings() {
+        User currentUser = getCurrentUser();
+        List<Booking> bookings = bookingRepository.findHistoryForUserWithDetails(currentUser.getUser_id());
+        if (bookings.isEmpty()) {
+            return List.of();
+        }
+        List<Integer> bookingIds = bookings.stream().map(Booking::getBooking_id).toList();
+        List<Ticket> tickets = bookingIds.isEmpty()
+                ? List.of()
+                : ticketRepository.findWithSeatsByBookingIds(bookingIds);
+
+        Map<Integer, List<String>> seatsByBooking = new HashMap<>();
+        for (Ticket t : tickets) {
+            Integer bid = t.getBooking().getBooking_id();
+            String label = "?";
+            if (t.getSeat() != null && t.getSeat().getSeat_number() != null) {
+                label = t.getSeat().getSeat_number().trim();
+            }
+            seatsByBooking.computeIfAbsent(bid, k -> new ArrayList<>()).add(label);
+        }
+
+        List<BookingHistoryItem> out = new ArrayList<>();
+        for (Booking b : bookings) {
+            Showtime st = b.getShowtime();
+            BookingHistoryItem item = new BookingHistoryItem();
+            item.setBookingId(b.getBooking_id());
+            item.setStatus(b.getStatus());
+            item.setTotalPrice(b.getTotal_price());
+            if (b.getCreated_at() != null) {
+                item.setCreatedAt(b.getCreated_at().toString());
+            }
+            if (b.getPaidAt() != null) {
+                item.setPaidAt(b.getPaidAt().toString());
+            }
+            item.setShowtimeId(st.getShowtime_id());
+            item.setMovieId(st.getMovie().getMovie_id());
+            item.setMovieTitle(st.getMovie().getTitle());
+            item.setShowDate(st.getShow_date().toString());
+            item.setStartTime(st.getStart_time().toString());
+            item.setRoomName(st.getRoom().getRoom_name());
+            List<String> labels = new ArrayList<>(seatsByBooking.getOrDefault(b.getBooking_id(), List.of()));
+            Collections.sort(labels, String.CASE_INSENSITIVE_ORDER);
+            item.setSeatLabels(labels);
+            out.add(item);
+        }
+        return out;
     }
 
     private User getCurrentUser() {

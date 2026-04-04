@@ -72,10 +72,16 @@ function normalizeShowtime(raw: Record<string, unknown>): ShowtimeResponse {
     pickStr(raw, 'cinemaName', 'cinema_name') ??
     pickStr((raw.cinema as Record<string, unknown>) ?? {}, 'name', 'cinemaName') ??
     'Rạp';
+  const roomRaw = raw.room;
+  const roomObj =
+    roomRaw && typeof roomRaw === 'object' && !Array.isArray(roomRaw)
+      ? (roomRaw as Record<string, unknown>)
+      : undefined;
   const screenName =
-    pickStr(raw, 'screenName', 'screen_name', 'roomName', 'room') ??
-    pickStr((raw.screen as Record<string, unknown>) ?? {}, 'name') ??
-    '';
+    pickStr(raw, 'screenName', 'screen_name', 'roomName') ??
+    pickStr((raw.screen as Record<string, unknown>) ?? {}, 'name', 'screenName') ??
+    pickStr(roomObj ?? {}, 'name', 'roomName', 'screenName', 'label') ??
+    (typeof roomRaw === 'string' ? roomRaw.trim() : '');
   const formatLabel =
     pickStr(raw, 'format', 'formatLabel', 'subtitleFormat', 'projectionFormat') ?? '2D';
   const priceRaw = raw.basePrice ?? raw.price ?? raw.ticketPrice;
