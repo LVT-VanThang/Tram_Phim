@@ -1,12 +1,13 @@
 package com.example.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import com.example.entity.Movie;
-import com.example.repository.MovieRepository;
-
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.example.entity.Movie;
+import com.example.repository.MovieRepository;
 
 @Service
 public class MovieService {
@@ -14,13 +15,24 @@ public class MovieService {
     @Autowired
     private MovieRepository movieRepository;
 
-    // Lấy danh sách tất cả phim
+    // Lay danh sach tat ca phim
     public List<Movie> getAllMovies() {
         return movieRepository.findAll();
     }
 
-    // Lấy chi tiết 1 bộ phim theo ID
+    // Lay chi tiet 1 bo phim theo ID
     public Optional<Movie> getMovieById(Integer id) {
         return movieRepository.findById(id);
+    }
+
+    //Tìm kiếm phim theo tên và thể loại
+    public List<Movie> searchMovies(String title, Integer genreId) {
+        String normalizedTitle = title != null ? title.trim() : null;
+
+        if (normalizedTitle != null && normalizedTitle.isEmpty()) {
+            normalizedTitle = null;
+        }
+
+        return movieRepository.searchMovies(normalizedTitle, genreId);
     }
 }

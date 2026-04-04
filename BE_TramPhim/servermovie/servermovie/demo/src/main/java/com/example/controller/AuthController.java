@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,11 +25,15 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
-    // --- API ĐĂNG NHẬP ---
     @PostMapping("/login")
-    public Object login(@RequestBody LoginRequest loginRequest) {
-        System.out.println("username: " + loginRequest.username);
-        User user = authService.login(loginRequest.username, loginRequest.password);
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        User user;
+        try {
+            user = authService.login(loginRequest.username, loginRequest.password);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "message", e.getMessage()));
+        }
 
         List<String> roles = user.getUserRoles()
                 .stream()
@@ -37,32 +42,26 @@ public class AuthController {
 
         String token = JwtUtil.generateToken(user.getUsername(), roles);
 
-        return Map.of(
+        return ResponseEntity.ok(Map.of(
                 "token", token,
                 "roles", roles,
                 "full_name", user.getFull_name(),
                 "email", user.getEmail(),
-                "phone", user.getPhone());
+                "phone", user.getPhone()));
     }
 
-    // --- API ĐĂNG KÝ ---
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
-            // Gọi sang AuthService để xử lý logic lưu vào Database
             User newUser = authService.register(request);
-            
-            // Nếu thành công, trả về HTTP 200 OK kèm thông báo
+
             return ResponseEntity.ok(Map.of(
                     "message", "Đăng ký tài khoản thành công!",
                     "username", newUser.getUsername(),
-                    "full_name", newUser.getFull_name()
-            ));
+                    "full_name", newUser.getFull_name()));
         } catch (RuntimeException e) {
-            // Nếu có lỗi (ví dụ: trùng username, trùng email), bắt lỗi và trả về HTTP 400 Bad Request
             return ResponseEntity.badRequest().body(Map.of(
-                    "error", e.getMessage()
-            ));
+                    "error", e.getMessage()));
         }
     }
 }

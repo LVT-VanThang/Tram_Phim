@@ -1,12 +1,17 @@
 package com.example.config;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import com.example.dto.UnauthorizedErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -22,12 +27,24 @@ import jakarta.servlet.http.HttpServletResponse;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    private static final String LOGIN_REQUIRED_MESSAGE = "Bạn cần đăng nhập để đặt vé";
+
+    @Bean
+    public AuthenticationEntryPoint jsonUnauthorizedEntryPoint(ObjectMapper objectMapper) {
+        return (request, response, authException) -> {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            String path = request.getRequestURI() != null ? request.getRequestURI() : "";
+            objectMapper.writeValue(
+                    response.getOutputStream(),
+                    UnauthorizedErrorResponse.of(path, LOGIN_REQUIRED_MESSAGE));
+        };
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // THÊM: Cho phép domain thật của Thắng
-        //config.setAllowedOrigins(List.of("https://vanthang13.id.vn", "https://www.vanthang13.id.vn", "http://localhost:5173"));
         config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
@@ -38,32 +55,27 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationEntryPoint jsonUnauthorizedEntryPoint)
+            throws Exception {
         System.out.println(">>> SECURITY CONFIG LOADED <<<");
+
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(h -> h.disable())
-                .formLogin(f -> f.disable()) // Tắt trang login mặc định
+                .formLogin(f -> f.disable())
                 .addFilterBefore(new JwtFilter(), UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(jsonUnauthorizedEntryPoint))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS,"/**").permitAll()
-                        .requestMatchers("/", "/error", "/login").permitAll()
-                        .requestMatchers("/api/auth/**","/auth/**").permitAll()
-                        // Tránh lỗi match pattern khi deploy (render/proxy có thể thay đổi path).
-                        // Trong app này, FE đang gọi toàn bộ endpoint /api/** nên cho phép truy cập công khai
-                        // (admin vẫn bảo vệ riêng).
-                        .requestMatchers("/api/**").permitAll()
-                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
-                        .anyRequest().authenticated());
+                        .dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD).permitAll()
+                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/genres/**").permitAll()
+                        .requestMatchers("/api/movies/**").permitAll()
+                        .requestMatchers("/api/showtimes/**").permitAll()
+                        .anyRequest().authenticated() // Tất cả các request khác phải đăng nhập
+                );
 
-        // Với API (/api/**) thì không redirect về trang /login (SPA/API debugging sẽ rất khó),
-        // mà trả 401 để frontend/Postman hiểu đúng lỗi.
-        http.exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
-            System.out.println("URI: " + request.getRequestURL());
-            System.out.println("AUTH HEADER: " + request.getHeader("Authorization"));
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-        }));
         return http.build();
     }
 }
