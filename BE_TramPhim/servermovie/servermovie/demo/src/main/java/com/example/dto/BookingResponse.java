@@ -14,6 +14,7 @@ public class BookingResponse {
     private List<Integer> seatIds;
     private BigDecimal totalPrice;
     private String status;
+    private PaymentInfo payment;
 
     public BookingResponse() {
     }
@@ -23,17 +24,19 @@ public class BookingResponse {
                            Integer showtimeId,
                            List<Integer> seatIds,
                            BigDecimal totalPrice,
-                           String status) {
+                           String status,
+                           PaymentInfo payment) {
         this.message = message;
         this.bookingId = bookingId;
         this.showtimeId = showtimeId;
         this.seatIds = seatIds;
         this.totalPrice = totalPrice;
         this.status = status;
+        this.payment = payment;
     }
 
     public static BookingResponse messageOnly(String message) {
-        return new BookingResponse(message, null, null, null, null, null);
+        return new BookingResponse(message, null, null, null, null, null, null);
     }
 
     public String getMessage() {
@@ -82,5 +85,13 @@ public class BookingResponse {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public PaymentInfo getPayment() {
+        return payment;
+    }
+
+    public void setPayment(PaymentInfo payment) {
+        this.payment = payment;
     }
 }

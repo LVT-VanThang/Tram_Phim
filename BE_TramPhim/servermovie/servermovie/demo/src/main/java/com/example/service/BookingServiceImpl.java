@@ -63,6 +63,9 @@ public class BookingServiceImpl implements BookingService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private VietQrPaymentService vietQrPaymentService;
+
     @Override
     @Transactional
     public BookingResponse createBooking(CreateBookingRequest request) {
@@ -130,13 +133,21 @@ public class BookingServiceImpl implements BookingService {
         }
         ticketRepository.saveAll(tickets);
 
+        int quantity = normalizedSeatIds.size();
+        var payment = vietQrPaymentService.buildPaymentInfo(
+                showtime.getPrice(),
+                quantity,
+                savedBooking.getTotal_price(),
+                savedBooking.getBooking_id());
+
         return new BookingResponse(
                 BOOKING_SUCCESS_MESSAGE,
                 savedBooking.getBooking_id(),
                 showtime.getShowtime_id(),
                 normalizedSeatIds,
                 savedBooking.getTotal_price(),
-                savedBooking.getStatus());
+                savedBooking.getStatus(),
+                payment);
     }
 
     private User getCurrentUser() {
