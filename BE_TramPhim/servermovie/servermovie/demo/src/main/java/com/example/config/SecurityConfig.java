@@ -73,7 +73,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/showtimes/**").permitAll()
                         
                         // ===== ĐÃ THÊM QUYỀN ADMIN Ở ĐÂY =====
-                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/admin/**").permitAll()
                         
                         .anyRequest().authenticated()
                 );
